@@ -30,10 +30,11 @@ from transformers import (
     XLMRobertaTokenizer,
     XLMTokenizer,
     XLNetConfig,
-    XLNetTokenizer,
+    XLNetTokenizer, AutoConfig,
 )
 
 from simpletransformers.classification import ClassificationModel
+from simpletransformers.classification.robert_tokenizer_fast_json_file import RobertaTokenizerFastJsonFile
 from simpletransformers.config.global_args import global_args
 from simpletransformers.config.model_args import MultiLabelClassificationArgs
 from simpletransformers.config.utils import sweep_config_to_sweep_values
@@ -97,8 +98,10 @@ class MultiLabelClassificationModel(ClassificationModel):
             "distilbert": (DistilBertConfig, DistilBertForMultiLabelSequenceClassification, DistilBertTokenizer,),
             "electra": (ElectraConfig, ElectraForMultiLabelSequenceClassification, ElectraTokenizer),
             "flaubert": (FlaubertConfig, FlaubertForMultiLabelSequenceClassification, FlaubertTokenizer,),
+            "herbert": (AutoConfig, BertForMultiLabelSequenceClassification, XLMTokenizer,),
             "longformer": (LongformerConfig, LongformerForMultiLabelSequenceClassification, LongformerTokenizer,),
             "roberta": (RobertaConfig, RobertaForMultiLabelSequenceClassification, RobertaTokenizer,),
+            "roberta-polish": (RobertaConfig, RobertaForMultiLabelSequenceClassification, RobertaTokenizerFastJsonFile,),
             "xlm": (XLMConfig, XLMForMultiLabelSequenceClassification, XLMTokenizer),
             "xlmroberta": (XLMRobertaConfig, XLMRobertaForMultiLabelSequenceClassification, XLMRobertaTokenizer,),
             "xlnet": (XLNetConfig, XLNetForMultiLabelSequenceClassification, XLNetTokenizer,),

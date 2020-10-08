@@ -74,10 +74,14 @@ from transformers import (
     XLNetConfig,
     XLNetForTokenClassification,
     XLNetTokenizerFast,
+    LayoutLMConfig,
+    LayoutLMForTokenClassification,
+    LayoutLMTokenizer, XLMTokenizer, BertPreTrainedModel,
 )
 from wandb import config
 from transformers.convert_graph_to_onnx import convert, quantize
 
+from simpletransformers.classification.robert_tokenizer_fast_json_file import RobertaTokenizerFastJsonFile
 from simpletransformers.config.global_args import global_args
 from simpletransformers.config.model_args import NERArgs
 from simpletransformers.config.utils import sweep_config_to_sweep_values
@@ -136,11 +140,13 @@ class NERModel:
             "camembert": (CamembertConfig, CamembertForTokenClassification, CamembertTokenizer),
             "distilbert": (DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer),
             "electra": (ElectraConfig, ElectraForTokenClassification, ElectraTokenizer),
+            "herbert": (AutoConfig, BertForTokenClassification, XLMTokenizer),
             "layoutlm": (LayoutLMConfig, LayoutLMForTokenClassification, LayoutLMTokenizer),
             "longformer": (LongformerConfig, LongformerForTokenClassification, LongformerTokenizer),
             "mobilebert": (MobileBertConfig, MobileBertForTokenClassification, MobileBertTokenizer),
             "mpnet": (MPNetConfig, MPNetForTokenClassification, MPNetTokenizer),
             "roberta": (RobertaConfig, RobertaForTokenClassification, RobertaTokenizer),
+            "roberta-polish": (RobertaConfig, RobertaForTokenClassification, RobertaTokenizerFastJsonFile),
             "squeezebert": (SqueezeBertConfig, SqueezeBertForTokenClassification, SqueezeBertTokenizer),
             "xlmroberta": (XLMRobertaConfig, XLMRobertaForTokenClassification, XLMRobertaTokenizer),
             "xlnet": (XLNetConfig, XLNetForTokenClassification, XLNetTokenizerFast),

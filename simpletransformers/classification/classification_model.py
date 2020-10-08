@@ -83,7 +83,7 @@ from transformers import (
     XLMRobertaTokenizer,
     XLMTokenizer,
     XLNetConfig,
-    XLNetTokenizer,
+    XLNetTokenizer, AutoConfig,
 )
 from transformers.convert_graph_to_onnx import convert, quantize
 
@@ -93,6 +93,7 @@ from simpletransformers.classification.classification_utils import (
     ClassificationDataset,
     convert_examples_to_features,
 )
+from simpletransformers.classification.robert_tokenizer_fast_json_file import RobertaTokenizerFastJsonFile
 from simpletransformers.classification.transformer_models.albert_model import AlbertForSequenceClassification
 from simpletransformers.classification.transformer_models.bert_model import BertForSequenceClassification
 from simpletransformers.classification.transformer_models.camembert_model import CamembertForSequenceClassification
@@ -174,11 +175,13 @@ class ClassificationModel:
             "distilbert": (DistilBertConfig, DistilBertForSequenceClassification, DistilBertTokenizer),
             "electra": (ElectraConfig, ElectraForSequenceClassification, ElectraTokenizer),
             "flaubert": (FlaubertConfig, FlaubertForSequenceClassification, FlaubertTokenizer),
+            "herbert": (AutoConfig, BertForSequenceClassification, XLMTokenizer),
             "layoutlm": (LayoutLMConfig, LayoutLMForSequenceClassification, LayoutLMTokenizer),
             "longformer": (LongformerConfig, LongformerForSequenceClassification, LongformerTokenizer),
             "mobilebert": (MobileBertConfig, MobileBertForSequenceClassification, MobileBertTokenizer),
             "mpnet": (MPNetConfig, MPNetForSequenceClassification, MPNetTokenizer),
             "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
+            "roberta-polish": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizerFastJsonFile),
             "squeezebert": (SqueezeBertConfig, SqueezeBertForSequenceClassification, SqueezeBertTokenizer),
             "xlm": (XLMConfig, XLMForSequenceClassification, XLMTokenizer),
             "xlmroberta": (XLMRobertaConfig, XLMRobertaForSequenceClassification, XLMRobertaTokenizer),
