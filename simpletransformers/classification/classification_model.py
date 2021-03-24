@@ -111,7 +111,6 @@ from simpletransformers.config.model_args import ClassificationArgs
 from simpletransformers.config.utils import sweep_config_to_sweep_values
 from simpletransformers.custom_models.models import ElectraForSequenceClassification
 
-
 try:
     import wandb
 
@@ -120,7 +119,6 @@ except ImportError:
     wandb_available = False
 
 logger = logging.getLogger(__name__)
-
 
 MODELS_WITHOUT_CLASS_WEIGHTS_SUPPORT = ["squeezebert", "deberta", "mpnet"]
 
@@ -133,18 +131,19 @@ MODELS_WITHOUT_SLIDING_WINDOW_SUPPORT = ["squeezebert"]
 
 class ClassificationModel:
     def __init__(
-        self,
-        model_type,
-        model_name,
-        tokenizer_type=None,
-        tokenizer_name=None,
-        num_labels=None,
-        weight=None,
-        args=None,
-        use_cuda=True,
-        cuda_device=-1,
-        onnx_execution_provider=None,
-        **kwargs,
+            self,
+            model_type,
+            model_name,
+            tokenizer_type=None,
+            tokenizer_name=None,
+            num_labels=None,
+            weight=None,
+            args=None,
+            use_cuda=True,
+            cuda_device=-1,
+            onnx_execution_provider=None,
+            pos_weight=None,
+            **kwargs,
     ):
 
         """
@@ -251,6 +250,8 @@ class ClassificationModel:
         else:
             self.weight = weight
 
+        self.pos_weight = pos_weight
+
         if use_cuda:
             if torch.cuda.is_available():
                 if cuda_device == -1:
@@ -283,19 +284,29 @@ class ClassificationModel:
         else:
             if not self.args.quantized_model:
                 if self.weight:
+                    pos_weight = None
+                    if self.pos_weight:
+                        pos_weight = torch.Tensor(self.pos_weight).to(self.device)
+
                     self.model = model_class.from_pretrained(
-                        model_name, config=self.config, weight=torch.Tensor(self.weight).to(self.device), **kwargs,
+                        model_name, config=self.config, weight=torch.Tensor(self.weight).to(self.device),
+                        pos_weight=pos_weight, **kwargs,
                     )
                 else:
                     self.model = model_class.from_pretrained(model_name, config=self.config, **kwargs)
             else:
                 quantized_weights = torch.load(os.path.join(model_name, "pytorch_model.bin"))
                 if self.weight:
+                    pos_weight = None
+                    if self.pos_weight:
+                        pos_weight = torch.Tensor(self.pos_weight).to(self.device)
+
                     self.model = model_class.from_pretrained(
                         None,
                         config=self.config,
                         state_dict=quantized_weights,
                         weight=torch.Tensor(self.weight).to(self.device),
+                        pos_weight=pos_weight
                     )
                 else:
                     self.model = model_class.from_pretrained(None, config=self.config, state_dict=quantized_weights)
@@ -355,15 +366,15 @@ class ClassificationModel:
             self.args.wandb_project = None
 
     def train_model(
-        self,
-        train_df,
-        multi_label=False,
-        output_dir=None,
-        show_running_loss=True,
-        args=None,
-        eval_df=None,
-        verbose=True,
-        **kwargs,
+            self,
+            train_df,
+            multi_label=False,
+            output_dir=None,
+            show_running_loss=True,
+            args=None,
+            eval_df=None,
+            verbose=True,
+            **kwargs,
     ):
         """
         Trains the model using 'train_df'
@@ -485,14 +496,14 @@ class ClassificationModel:
         return global_step, training_details
 
     def train(
-        self,
-        train_dataloader,
-        output_dir,
-        multi_label=False,
-        show_running_loss=True,
-        eval_df=None,
-        verbose=True,
-        **kwargs,
+            self,
+            train_dataloader,
+            output_dir,
+            multi_label=False,
+            show_running_loss=True,
+            eval_df=None,
+            verbose=True,
+            **kwargs,
     ):
         """
         Trains the model on train_dataset.
@@ -652,7 +663,7 @@ class ClassificationModel:
                 global_step = int(checkpoint_suffix)
                 epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
                 steps_trained_in_current_epoch = global_step % (
-                    len(train_dataloader) // args.gradient_accumulation_steps
+                        len(train_dataloader) // args.gradient_accumulation_steps
                 )
 
                 logger.info("   Continuing training from checkpoint, will skip to saved global_step")
@@ -759,8 +770,8 @@ class ClassificationModel:
                         self.save_model(output_dir_current, optimizer, scheduler, model=model)
 
                     if args.evaluate_during_training and (
-                        args.evaluate_during_training_steps > 0
-                        and global_step % args.evaluate_during_training_steps == 0
+                            args.evaluate_during_training_steps > 0
+                            and global_step % args.evaluate_during_training_steps == 0
                     ):
                         # Only evaluate when single GPU otherwise metrics may not average well
                         results, _, _ = self.eval_model(
@@ -935,7 +946,7 @@ class ClassificationModel:
         )
 
     def eval_model(
-        self, eval_df, multi_label=False, output_dir=None, verbose=True, silent=False, wandb_log=True, **kwargs
+            self, eval_df, multi_label=False, output_dir=None, verbose=True, silent=False, wandb_log=True, **kwargs
     ):
         """
         Evaluates the model on eval_df. Saves results to output_dir.
@@ -972,7 +983,8 @@ class ClassificationModel:
         return result, model_outputs, wrong_preds
 
     def evaluate(
-        self, eval_df, output_dir, multi_label=False, prefix="", verbose=True, silent=False, wandb_log=True, **kwargs
+            self, eval_df, output_dir, multi_label=False, prefix="", verbose=True, silent=False, wandb_log=True,
+            **kwargs
     ):
         """
         Evaluates the model on eval_df.
@@ -1105,7 +1117,7 @@ class ClassificationModel:
                 window_ranges.append([count, count + n_windows])
                 count += n_windows
 
-            preds = [preds[window_range[0] : window_range[1]] for window_range in window_ranges]
+            preds = [preds[window_range[0]: window_range[1]] for window_range in window_ranges]
             out_label_ids = [
                 out_label_ids[i] for i in range(len(out_label_ids)) if i in [window[0] for window in window_ranges]
             ]
@@ -1166,7 +1178,7 @@ class ClassificationModel:
         return results, model_outputs, wrong
 
     def load_and_cache_examples(
-        self, examples, evaluate=False, no_cache=False, multi_label=False, verbose=True, silent=False
+            self, examples, evaluate=False, no_cache=False, multi_label=False, verbose=True, silent=False
     ):
         """
         Converts a list of InputExample objects to a TensorDataset containing InputFeatures. Caches the InputFeatures.
@@ -1200,8 +1212,8 @@ class ClassificationModel:
             )
 
             if os.path.exists(cached_features_file) and (
-                (not args.reprocess_input_data and not no_cache)
-                or (mode == "dev" and args.use_cached_eval_features and not no_cache)
+                    (not args.reprocess_input_data and not no_cache)
+                    or (mode == "dev" and args.use_cached_eval_features and not no_cache)
             ):
                 features = torch.load(cached_features_file)
                 if verbose:
@@ -1393,7 +1405,7 @@ class ClassificationModel:
             )
 
             for i, (input_ids, attention_mask) in enumerate(
-                zip(model_inputs["input_ids"], model_inputs["attention_mask"])
+                    zip(model_inputs["input_ids"], model_inputs["attention_mask"])
             ):
                 input_ids = input_ids.unsqueeze(0).detach().cpu().numpy()
                 attention_mask = attention_mask.unsqueeze(0).detach().cpu().numpy()
@@ -1546,7 +1558,7 @@ class ClassificationModel:
                     window_ranges.append([count, count + n_windows])
                     count += n_windows
 
-                preds = [preds[window_range[0] : window_range[1]] for window_range in window_ranges]
+                preds = [preds[window_range[0]: window_range[1]] for window_range in window_ranges]
 
                 model_outputs = preds
 

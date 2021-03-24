@@ -1,6 +1,8 @@
+import logging
+
 import torch
 import torch.nn as nn
-from torch.nn import CrossEntropyLoss, MSELoss
+from torch.nn import BCEWithLogitsLoss, MSELoss
 from transformers.models.roberta.modeling_roberta import (
     ROBERTA_PRETRAINED_MODEL_ARCHIVE_LIST,
     RobertaClassificationHead,
@@ -9,7 +11,6 @@ from transformers.models.roberta.modeling_roberta import (
 )
 
 from transformers import BertPreTrainedModel
-
 
 class RobertaForSequenceClassification(BertPreTrainedModel):
     r"""
@@ -42,13 +43,15 @@ class RobertaForSequenceClassification(BertPreTrainedModel):
     pretrained_model_archive_map = ROBERTA_PRETRAINED_MODEL_ARCHIVE_LIST
     base_model_prefix = "roberta"
 
-    def __init__(self, config, weight=None):
+    def __init__(self, config, weight=None, pos_weight=None):
         super(RobertaForSequenceClassification, self).__init__(config)
         self.num_labels = config.num_labels
 
         self.roberta = RobertaModel(config)
         self.classifier = RobertaClassificationHead(config)
         self.weight = weight
+        self.pos_weight = pos_weight
+        logging.error(f"!!!!!!!!!!!!!!!!! {self.pos_weight}")
 
     def forward(
         self,
@@ -81,7 +84,13 @@ class RobertaForSequenceClassification(BertPreTrainedModel):
                     weight = self.weight.to(labels.device)
                 else:
                     weight = None
-                loss_fct = CrossEntropyLoss(weight=weight)
+                if self.pos_weight is not None:
+                    pos_weight = self.pos_weight.to(labels.device)
+                else:
+                    pos_weight = None
+
+                logging.error(f"!!!!!!!!!!!!!!!!! Forwards \t {pos_weight}")
+                loss_fct = BCEWithLogitsLoss(weight=weight, pos_weight=pos_weight)
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
 
